@@ -18,11 +18,18 @@ resource "azurerm_resource_group" "rg" {
   location = "East US"
 }
 
-# 2. Create the User Assigned Managed Identity (UAMI)
-resource "azurerm_user_assigned_identity" "uami" {
-  name                = "keda-experiments-uami"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+# 2. Create Azure AD app/service principal
+data "azuread_client_config" "current" {}
+
+resource "azuread_application" "keda-example" {
+  display_name = "keda-example"
+  owners       = [data.azuread_client_config.current.object_id]
+}
+
+resource "azuread_service_principal" "keda-example" {
+  client_id                    = azuread_application.keda-example.client_id
+  app_role_assignment_required = false
+  owners                       = [data.azuread_client_config.current.object_id]
 }
 
 # 3. Create the Service Bus Namespace
@@ -39,6 +46,13 @@ resource "azurerm_servicebus_queue" "sb_queue" {
   namespace_id = azurerm_servicebus_namespace.sb_namespace.id
 }
 
+# 5. Allow the Service Principal to manage the Service Bus Namespace
+resource "azurerm_role_assignment" "service_principal_role_assignment" {
+  scope                = azurerm_servicebus_namespace.sb_namespace.id
+  role_definition_name = "Azure Service Bus Data Owner"
+  principal_id         = azuread_service_principal.keda-example.object_id
+}
+
 # Utility to generate a unique string for the Service Bus namespace name
 resource "random_string" "unique" {
   length  = 6
@@ -47,9 +61,9 @@ resource "random_string" "unique" {
 }
 
 # Outputs to verify details after creation
-output "uami_client_id" {
-  value       = azurerm_user_assigned_identity.uami.client_id
-  description = "The Client ID of the Managed Identity."
+output "service_principal_client_id" {
+  value       = azuread_service_principal.keda-example.client_id
+  description = "The Client ID of the Service Principal."
 }
 
 output "service_bus_endpoint" {
