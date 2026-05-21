@@ -32,6 +32,12 @@ resource "azuread_service_principal" "keda-example" {
   owners                       = [data.azuread_client_config.current.object_id]
 }
 
+resource "azuread_service_principal_password" "keda-example" {
+  service_principal_id = azuread_service_principal.keda-example.id
+  end_date             = "2099-12-31T23:59:59Z"
+}
+
+
 # 3. Create the Service Bus Namespace
 resource "azurerm_servicebus_namespace" "sb_namespace" {
   name                = "keda-experiments-${random_string.unique.result}" # Must be globally unique
@@ -64,6 +70,12 @@ resource "random_string" "unique" {
 output "service_principal_client_id" {
   value       = azuread_service_principal.keda-example.client_id
   description = "The Client ID of the Service Principal."
+}
+
+output "service_principal_password" {
+  value       = azuread_service_principal_password.keda-example.value
+  description = "The password for the Service Principal."
+  sensitive   = true
 }
 
 output "service_bus_endpoint" {
