@@ -78,7 +78,16 @@ output "service_principal_password" {
   sensitive   = true
 }
 
-output "service_bus_endpoint" {
-  value       = azurerm_servicebus_namespace.sb_namespace.endpoint
-  description = "The primary endpoint of the Service Bus Namespace."
+output "current_tenant_id" {
+  value = data.azuread_client_config.current.tenant_id
+}
+
+output "service_bus_namespace_name" {
+  value       = azurerm_servicebus_namespace.sb_namespace.name
+  description = "The name of the Service Bus Namespace."
+}
+
+output "service_bus_queue_name" {
+  value       = azurerm_servicebus_queue.sb_queue.name
+  description = "The name of the Service Bus Queue."
 }
