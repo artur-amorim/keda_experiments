@@ -2,6 +2,7 @@ import os
 import asyncio
 
 from azure.identity.aio import ClientSecretCredential
+from azure.servicebus import TransportType
 from azure.servicebus.aio import ServiceBusClient
 
 
@@ -27,7 +28,8 @@ async def main():
 
     servicebus_client = ServiceBusClient(
         fully_qualified_namespace=os.environ["SB_FULLY_QUALIFIED_NAMESPACE"],
-        credential=credential
+        credential=credential,
+        transport_type=TransportType.AmqpOverWebsocket,
     )
 
     async with servicebus_client:
